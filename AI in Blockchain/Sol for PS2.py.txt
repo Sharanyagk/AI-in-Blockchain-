@@ -1,0 +1,130 @@
+import pandas as pd
+import numpy as np
+from sklearn.ensemble import IsolationForest
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, classification_report
+import matplotlib.pyplot as plt
+from keras.models import Sequential
+from keras.layers import Dense, LSTM
+import yfinance as yf  
+
+
+def analyze_blockchain_data(df):
+    scaler = StandardScaler()
+    df_scaled = scaler.fit_transform(df[['amount', 'fee']])
+    
+    
+    model = IsolationForest(n_estimators=100, contamination=0.05)
+    df['anomaly'] = model.fit_predict(df_scaled)
+    
+    anomalies = df[df['anomaly'] == -1]
+    print(f"Number of anomalies detected: {len(anomalies)}")
+    
+    
+    plt.figure(figsize=(10, 6))
+    plt.scatter(df['timestamp'], df['amount'], c=df['anomaly'], cmap='coolwarm')
+    plt.title('Transaction Amount with Anomalies')
+    plt.xlabel('Timestamp')
+    plt.ylabel('Amount')
+    plt.colorbar(label='Anomaly (-1=Anomaly, 1=Normal)')
+    plt.show()
+
+
+def predict_security_threats(df):
+
+    df['is_fraud'] = np.random.randint(0, 2, size=len(df))  
+    
+    X = df[['amount', 'fee']]
+    y = df['is_fraud']
+    
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+    
+    clf = RandomForestClassifier()
+    clf.fit(X_train, y_train)
+    
+    y_pred = clf.predict(X_test)
+    print(f"Accuracy: {accuracy_score(y_test, y_pred)}")
+    print(f"Classification Report: \n{classification_report(y_test, y_pred)}")
+    
+    return clf
+
+
+def optimize_smart_contract(code):
+    
+    print(f"Optimizing smart contract code: {code}")
+    suggestions = ["Reduce gas usage by optimizing loops", "Check for reentrancy vulnerabilities"]
+    return suggestions
+
+def trading_detection_bot(market_data):
+    scaler = StandardScaler()
+    data_scaled = scaler.fit_transform(market_data[['price', 'volume']])
+    
+    model = IsolationForest(n_estimators=100, contamination=0.05)
+    market_data['suspicious'] = model.fit_predict(data_scaled)
+    
+    suspicious_trades = market_data[market_data['suspicious'] == -1]
+    print(f"Suspicious trades detected: {len(suspicious_trades)}")
+    
+    return suspicious_trades
+
+
+def forecast_crypto_price(symbol='BTC-USD', n_steps=60):
+    crypto_data = yf.download(symbol, start="2020-01-01", end="2023-01-01")
+    
+    close_prices = crypto_data['Close'].values
+    close_prices = close_prices.reshape(-1, 1)
+    
+    scaler = StandardScaler()
+    scaled_data = scaler.fit_transform(close_prices)
+    
+    X_train, y_train = [], []
+    for i in range(n_steps, len(scaled_data)):
+        X_train.append(scaled_data[i-n_steps:i, 0])
+        y_train.append(scaled_data[i, 0])
+    
+    X_train, y_train = np.array(X_train), np.array(y_train)
+    X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
+    
+    
+    model = Sequential()
+    model.add(LSTM(units=50, return_sequences=True, input_shape=(X_train.shape[1], 1)))
+    model.add(LSTM(units=50))
+    model.add(Dense(1))
+    
+    model.compile(optimizer='adam', loss='mean_squared_error')
+    model.fit(X_train, y_train, epochs=10, batch_size=32)
+    
+    return model
+
+
+data = {
+    'transaction_id': np.arange(1, 1001),
+    'amount': np.random.lognormal(mean=5, sigma=1.0, size=1000),
+    'fee': np.random.lognormal(mean=1, sigma=0.2, size=1000),
+    'timestamp': pd.date_range('2023-01-01', periods=1000, freq='T')
+}
+df = pd.DataFrame(data)
+
+analyze_blockchain_data(df)
+
+model_fraud = predict_security_threats(df)
+
+
+smart_contract_code = """
+pragma solidity ^0.8.0;
+contract Example {
+    function doSomething() public {}
+}
+"""
+suggestions = optimize_smart_contract(smart_contract_code)
+print(f"Suggestions for smart contract optimization: {suggestions}")
+
+market_data = pd.DataFrame({
+    'price': np.random.normal(100, 10, 1000),
+    'volume': np.random.normal(1000, 50, 1000)
+})
+suspicious_trades = trading_detection_bot(market_data)
+
+crypto_model = forecast_crypto_price('BTC-USD')
